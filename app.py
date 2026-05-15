@@ -397,6 +397,19 @@ def student_submit_exam():
                 marks = q["marks"]
                 mcq_score += marks
 
+
+        supabase.table("Submission").insert({
+            "submission_id": submission_id,
+            "exam_id": exam_id,
+            "session_id": session["session_id"],
+            "student_id": student_id,
+            "student_name": "",
+            "mcq_score": mcq_score,
+            "total_grade": mcq_score,
+            "grading_status": "completed",
+            "submitted_at": datetime.utcnow().isoformat()
+            }).execute()
+
         supabase.table("Answer").insert({
             "submission_id": submission_id,
             "exam_id": exam_id,
@@ -406,18 +419,6 @@ def student_submit_exam():
             "answer_text": ans.get("answer_text"),
             "marks_obtained": marks
         }).execute()
-
-    supabase.table("Submission").insert({
-        "submission_id": submission_id,
-        "exam_id": exam_id,
-        "session_id": session["session_id"],
-        "student_id": student_id,
-        "student_name": "",
-        "mcq_score": mcq_score,
-        "total_grade": mcq_score,
-        "grading_status": "completed",
-        "submitted_at": datetime.utcnow().isoformat()
-    }).execute()
 
     return jsonify({
         "status": "success",
