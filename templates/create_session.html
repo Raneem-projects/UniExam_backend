@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Create Session</title>
+
+    <style>
+        body{font-family:Arial;background:#f5f7fb;margin:0;}
+        .header{background:#1e88e5;color:white;padding:15px 30px;font-size:22px;}
+        .card{
+            background:white;
+            padding:30px;
+            border-radius:10px;
+            max-width:500px;
+            margin:40px auto;
+            box-shadow:0 2px 8px rgba(0,0,0,0.1);
+        }
+        .btn{
+            background:#1e88e5;
+            color:white;
+            border:none;
+            padding:10px 16px;
+            border-radius:6px;
+            cursor:pointer;
+            margin-top:20px;
+        }
+        .pin{
+            font-size:26px;
+            margin-top:20px;
+            font-weight:bold;
+            color:#26a69a;
+        }
+    </style>
+</head>
+
+<body>
+
+<div class="header">Create Exam Session</div>
+
+<div class="card">
+
+    <h2>Exam Session</h2>
+    <button class="btn" onclick="createSession()">
+        New Session PIN
+    </button>
+
+    <div id="pin" class="pin"></div>
+
+</div>
+
+<script>
+
+function createSession(){
+
+    const examId = "{{ exam_id }}";
+
+    if(!examId){
+        alert("Exam ID not found");
+        return;
+    }
+
+    fetch("/api/create-session",{
+        method:"POST",
+        headers:{
+            "Content-Type":"application/json"
+        },
+        body:JSON.stringify({
+            exam_id: examId
+        })
+    })
+    .then(response => response.json())
+    .then(data=>{
+
+        if(data.session_pin){
+            document.getElementById("pin").innerText =
+                "PIN: " + data.session_pin;
+        }else{
+            document.getElementById("pin").innerText =
+                "Error creating session";
+        }
+
+    })
+    .catch(error=>{
+        document.getElementById("pin").innerText =
+            "Server Error";
+    });
+
+}
+
+</script>
+
+
+</body>
+</html>

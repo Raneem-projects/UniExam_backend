@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Upload Exam</title>
+
+    <style>
+
+        .header{
+            position: fixed;
+            background:#1e88e5;
+            color:white;
+            padding:18px 30px;
+            font-size:22px;
+            font-weight:bold;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 0;
+        }
+
+        .container{
+            padding:30px;
+        }
+
+        .center-wrapper{
+            flex:1;
+            display:flex;
+            justify-content:center;
+            align-items:center;
+        }
+
+        .card{
+            background:white;
+            border-radius:12px;
+            padding:35px 40px;
+            box-shadow:0 3px 12px rgba(0,0,0,0.12);
+            text-align:center;
+            width: 360px;
+            height: 180px;  
+        }
+
+        h2{
+            margin-top:0;
+            margin-bottom:22px;
+        }
+        
+        body {
+            margin: 0;
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background: #f5f6fa;
+            font-family: Arial;
+        }
+
+        .upload-box{
+            border:2px dashed #b9c3d1;
+            border-radius:10px;
+            padding:25px;
+            cursor:pointer;
+            transition:0.2s;
+            margin-bottom:18px;
+           width: 200px;
+           box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+           text-align: center;
+        }
+
+        .upload-box:hover{
+            border-color:#1e88e5;
+            background:#f3f8ff;
+        }
+
+        .upload-text{
+            color:#444;
+            font-size:15px;
+            align-items: center;
+        }
+
+        input[type=file]{
+            display:none;
+        }
+
+        .btn{
+            background:#1e88e5;
+            color:white;
+            border:none;
+            padding:12px;
+            border-radius:7px;
+            cursor:pointer;
+            font-size:14px;
+            align-items: center;
+            width: 40%;
+            transition: 0.3s;
+        }
+
+        .btn:hover{
+            background:#1565c0;
+        }
+
+        .msg{
+            margin-top:14px;
+            font-weight:bold;
+            color:#333;
+            font-size:14px;
+            align-items: center;
+        }
+
+
+
+.file-select {
+  border: 2px dashed #ccc;
+  padding: 30px 10px;
+  border-radius: 10px;
+  margin-bottom: 20px;
+  cursor: pointer;
+  transition: 0.3s;
+}
+
+.file-select:hover {
+  border-color: #007bff;
+}
+
+
+    </style>
+</head>
+
+<body>
+
+<div class="header">
+    Upload Exam
+</div>
+
+<div class="container">
+
+<div class="center-wrapper">
+    <div class="card">
+
+        <h2>Upload Exam</h2>
+
+        <label>
+            <div class="file-select">
+            <div class="upload-text" id="fileText">
+                Select PDF File
+            </div>
+            </div>
+            <input type="file" id="pdfFile" accept="application/pdf">
+        </label>
+
+        <button class="btn" onclick="uploadPDF()">
+            Upload Exam
+        </button>
+
+        <div id="msg" class="msg"></div>
+
+    </div>
+</div>
+</div>
+
+<script>
+const fileInput = document.getElementById("pdfFile");
+const fileText = document.getElementById("fileText");
+
+fileInput.addEventListener("change", ()=>{
+    if(fileInput.files.length>0){
+        fileText.innerText = fileInput.files[0].name;
+    }
+});
+
+function uploadPDF(){
+    const file = fileInput.files[0];
+    if(!file){
+        alert("Select PDF");
+        return;
+    }
+
+    const formData = new FormData();
+    formData.append("pdf", file);
+
+    fetch("/api/doctor/upload-pdf",{
+        method:"POST",
+        body:formData
+    })
+    .then(r=>r.json())
+    .then(data=>{
+        document.getElementById("msg").innerText =
+            "Exam uploaded — ID: "+data.exam_id;
+    })
+    .catch(()=>{
+        document.getElementById("msg").innerText =
+            "Upload failed";
+    });
+}
+</script>
+
+</body>
+</html>

@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Submissions</title>
+    <style>
+        body { font-family: Arial; background: #f5f6fa; margin: 0; padding-top: 70px; }
+        .header { position: fixed; background: #1e88e5; color: white; padding: 15px 30px;
+                  font-size: 22px; font-weight: bold; top: 0; left: 0; right: 0; z-index: 10; }
+        .container { padding: 30px; }
+        .exam-info { background: white; border-radius: 10px; padding: 20px;
+                     box-shadow: 0 2px 8px rgba(0,0,0,0.1); margin-bottom: 24px; }
+        .exam-info h2 { margin: 0 0 12px 0; color: #1e88e5; }
+        .exam-info p { margin: 4px 0; color: #444; }
+        table { width: 100%; border-collapse: collapse; background: white;
+                border-radius: 8px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+        th { background: #1e88e5; color: white; padding: 12px; text-align: left; }
+        td { padding: 12px; border-bottom: 1px solid #eee; }
+        .grade { font-weight: bold; color: #26a69a; }
+        .btn { border: none; padding: 6px 14px; border-radius: 6px; cursor: pointer; margin-right: 4px; }
+        .btn-pdf { background: #5c6bc0; color: white; }
+        .btn-del { background: #e53935; color: white; }
+        .back-btn { background: #78909c; color: white; border: none; padding: 8px 16px;
+                    border-radius: 6px; cursor: pointer; margin-bottom: 16px; }
+    </style>
+</head>
+<body>
+<div class="header">UniExam — Submissions</div>
+<div class="container">
+    <button class="back-btn" onclick="window.location.href='/dashboard'">← Back to Dashboard</button>
+    {% if exam %}
+    <div class="exam-info">
+        <h2>{{ exam.title }}</h2>
+        <p><strong>Course:</strong> {{ exam.course_code }}</p>
+        <p><strong>Instructor:</strong> {{ exam.instructor }}</p>
+        <p><strong>Duration:</strong> {{ exam.duration_minutes }} minutes</p>
+        <p><strong>Total Marks:</strong> {{ exam.total_marks }}</p>
+        <p><strong>Total Submissions:</strong> {{ submissions|length }}</p>
+    </div>
+    {% endif %}
+    <h2>Students Submissions</h2>
+    <table>
+        <thead>
+            <tr>
+                <th>#</th>
+                <th>Student ID</th>
+                <th>Section</th>
+                <th>Submission Date</th>
+                <th>Score</th>
+                <th>Status</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+        {% for sub in submissions %}
+        <tr id="row-{{ sub.submission_id }}">
+            <td>{{ loop.index }}</td>
+            <td>{{ sub.student_id }}</td>
+            <td>{{ sub.student_name | replace("ID:" + sub.student_id + " | Sec:", "") | replace("Sec:", "") }}</td>
+            <td>{% if sub.submitted_at %}{{ sub.submitted_at.strftime("%Y-%m-%d %H:%M") }}{% else %}-{% endif %}</td>
+            <td class="grade">
+                {{ sub.total_grade if sub.total_grade is not none else "-" }}
+                {% if exam and exam.total_marks %} / {{ exam.total_marks }}{% endif %}
+            </td>
+            <td>
+                {% if sub.grading_status == "completed" %}
+                    <span style="color:green;font-weight:bold;">✓ Graded</span>
+                {% else %}
+                    <span style="color:orange;">Pending</span>
+                {% endif %}
+            </td>
+            <td>
+                <button class="btn btn-pdf" onclick="window.open('/api/doctor/export_pdf/{{ sub.submission_id }}','_blank')">PDF</button>
+                <button class="btn btn-del" onclick="deleteSubmission('{{ sub.submission_id }}')">Delete</button>
+            </td>
+        </tr>
+        {% endfor %}
+        {% if not submissions %}
+        <tr><td colspan="7" style="text-align:center;color:#999;padding:30px;">No submissions yet.</td></tr>
+        {% endif %}
+        </tbody>
+    </table>
+</div>
+<script>
+function deleteSubmission(id){
+    if(!confirm("Delete this submission?")) return;
+    fetch(`/api/doctor/delete_submission/${id}`,{method:"DELETE"})
+    .then(r=>r.json())
+    .then(d=>{
+        if(d.status=="deleted"){
+            const row = document.getElementById("row-"+id);
+            if(row) row.remove();
+        } else alert("Error: "+d.error);
+    });
+}
+</script>
+</body>
+</html>
