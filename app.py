@@ -207,6 +207,8 @@ def verify_pin():
     session = session[0]
 
     student_id = data.get("student_id")
+    student_name = data.get("student_name", "")
+    device_id = data.get("device_id", "")
 
     supabase.table("Student").insert({
         "student_id": student_id,
@@ -214,6 +216,19 @@ def verify_pin():
         "exam_id": session["exam_id"],
         "device_id": device_id
     }).execute()
+
+    existing = supabase.table("Student") \
+        .select("*") \
+            .eq("student_id", student_id) \
+                .eq("exam_id", session["exam_id"]) \
+                    .execute().data
+    if not existing:
+        supabase.table("Student").insert({
+            "student_id": student_id,
+            "student_name": student_name,
+            "exam_id": session["exam_id"],
+            "device_id": device_id
+            }).execute()
 
     exam = supabase.table("Exam").select("*").eq("exam_id", session["exam_id"]).execute().data[0]
 
@@ -291,15 +306,11 @@ def student_submit_exam():
         student = supabase.table("Student") \
             .select("*") \
                 .eq("student_id", student_id) \
-                    .execute().data
-        
+                    .eq("exam_id", exam_id) \
+                        .execute().data
         if not student:
-            return jsonify({
-                "error": "Student not found in DB",
-                "student_id_received": student_id
-                }), 400
+            return jsonify({"error": "Student not registered"}), 400
             
-            student = student[0]
             
             student_id = student["student_id"]
 
