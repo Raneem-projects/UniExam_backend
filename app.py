@@ -382,7 +382,20 @@ def student_submit_exam():
     submission_id = "SUB-" + uuid.uuid4().hex[:6].upper()
 
     mcq_score = 0
-
+    
+    supabase.table("Submission").insert({
+            "submission_id": submission_id,
+            "exam_id": exam_id,
+            "session_id": session["session_id"],
+            "student_id": student_id,
+            "student_name": "",
+            "mcq_score": mcq_score,
+            "total_grade": mcq_score,
+            "grading_status": "completed",
+            "submitted_at": datetime.utcnow().isoformat()
+            }).execute()
+    
+    
     for ans in answers:
 
         q = supabase.table("Question").select("*").eq("question_id", ans["question_id"]).eq("exam_id", exam_id).execute().data
@@ -397,18 +410,6 @@ def student_submit_exam():
                 marks = q["marks"]
                 mcq_score += marks
 
-
-        supabase.table("Submission").insert({
-            "submission_id": submission_id,
-            "exam_id": exam_id,
-            "session_id": session["session_id"],
-            "student_id": student_id,
-            "student_name": "",
-            "mcq_score": mcq_score,
-            "total_grade": mcq_score,
-            "grading_status": "completed",
-            "submitted_at": datetime.utcnow().isoformat()
-            }).execute()
 
         supabase.table("Answer").insert({
             "submission_id": submission_id,
