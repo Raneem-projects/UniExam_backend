@@ -187,6 +187,37 @@ def upload_pdf():
     })
 
 
+@app.route("/api/doctor/export_pdf/<submission_id>")
+def export_pdf(submission_id):
+
+    sub = supabase.table("Submission")\
+        .select("*")\
+        .eq("submission_id", submission_id)\
+        .execute().data
+
+    if not sub:
+        return jsonify({"error": "Not found"}), 404
+
+    sub = sub[0]
+
+    buffer = io.BytesIO()
+    doc = SimpleDocTemplate(buffer)
+
+    styles = getSampleStyleSheet()
+    content = []
+
+    content.append(Paragraph(f"Student ID: {sub.get('student_id')}", styles["Normal"]))
+    content.append(Paragraph(f"Score: {sub.get('total_grade')}", styles["Normal"]))
+    content.append(Paragraph(f"Status: {sub.get('grading_status')}", styles["Normal"]))
+
+    doc.build(content)
+    buffer.seek(0)
+
+    return send_file(buffer, as_attachment=True,
+                     download_name=f"{submission_id}.pdf",
+                     mimetype="application/pdf")
+
+
 # ======================
 # Student verify PIN
 # ======================
