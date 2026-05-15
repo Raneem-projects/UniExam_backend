@@ -206,7 +206,7 @@ def verify_pin():
 
     session = session[0]
 
-    student_id = f"STU-{uuid.uuid4().hex[:6].upper()}"
+    student_id = data.get("student_id")
 
     supabase.table("Student").insert({
         "student_id": student_id,
