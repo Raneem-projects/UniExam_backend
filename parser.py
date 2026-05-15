@@ -6,10 +6,10 @@ from supabase import create_client
 
 
 # ===============================
-# Supabase Setup (نفس بياناتك)
+# Supabase Setup
 # ===============================
 SUPABASE_URL = "https://yvwtsebueljtuimhytwp.supabase.co"
-SUPABASE_KEY = "YOUR_KEY_HERE"
+SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inl2d3RzZWJ1ZWxqdHVpbWh5dHdwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg4MzcyMDEsImV4cCI6MjA5NDQxMzIwMX0.oIXJ2CjW00DpGcv5FfXj-j2CtcH_fopqSX5Q8O0hkMM"
 
 supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
 
