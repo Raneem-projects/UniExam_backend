@@ -344,9 +344,9 @@ def student_result(submission_id):
 @app.route("/api/doctor/delete_exam/<exam_id>", methods=["DELETE"])
 def delete_exam(exam_id):
     try:
+        supabase.table("Student").delete().eq("exam_id", exam_id).execute()
         supabase.table("Answer").delete().eq("exam_id", exam_id).execute()
         supabase.table("Submission").delete().eq("exam_id", exam_id).execute()
-        supabase.table("Student").delete().eq("exam_id", exam_id).execute()
         supabase.table("Session").delete().eq("exam_id", exam_id).execute()
         supabase.table("Question").delete().eq("exam_id", exam_id).execute()
         supabase.table("Exam").delete().eq("exam_id", exam_id).execute()
