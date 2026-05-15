@@ -485,7 +485,7 @@ def export_pdf(submission_id):
     elements.append(Spacer(1, 10))
 
     
-    elements.append(Paragraph("UniExam System", styles["Heading2"]))
+    elements.append(Paragraph("UniExam", styles["Heading2"]))
     elements.append(Paragraph("Student Report", styles["Title"]))
     elements.append(Spacer(1, 15))
 
