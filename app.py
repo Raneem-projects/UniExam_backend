@@ -225,11 +225,12 @@ def student_submit_exam():
             "marks_obtained": marks
         }).execute()
 
-    return jsonify({
-        "status": "success",
-        "submission_id": submission_id,
-        "mcq_score": mcq_score
-    })
+
+        supabase.table("Submission").update({
+            "mcq_score": mcq_score,
+            "total_grade": mcq_score
+            }).eq("submission_id", submission_id).execute()
+
 
 
 # ======================
@@ -237,14 +238,18 @@ def student_submit_exam():
 # ======================
 @app.route("/api/doctor/delete_exam/<exam_id>", methods=["DELETE"])
 def delete_exam(exam_id):
+    try:
+        supabase.table("Answer").delete().eq("exam_id", exam_id).execute()
+        supabase.table("Submission").delete().eq("exam_id", exam_id).execute()
+        supabase.table("Session").delete().eq("exam_id", exam_id).execute()
+        supabase.table("Question").delete().eq("exam_id", exam_id).execute()
+        supabase.table("Exam").delete().eq("exam_id", exam_id).execute()
 
-    supabase.table("Answer").delete().eq("exam_id", exam_id).execute()
-    supabase.table("Submission").delete().eq("exam_id", exam_id).execute()
-    supabase.table("Session").delete().eq("exam_id", exam_id).execute()
-    supabase.table("Question").delete().eq("exam_id", exam_id).execute()
-    supabase.table("Exam").delete().eq("exam_id", exam_id).execute()
-
-    return jsonify({"status": "deleted"})
+        return jsonify({"status": "deleted"})
+    
+    except Exception as e:
+        print("DELETE ERROR:", e)   
+        return jsonify({"error": str(e)}), 500
 
 
 # ======================
