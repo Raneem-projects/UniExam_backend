@@ -62,14 +62,28 @@ def create_exam_page():
     return render_template("upload_exam.html")
 
 
+
 @app.route("/submissions_page")
 def submissions_page():
     exam_id = request.args.get("exam_id")
 
-    exam = supabase.table("Exam").select("*").eq("exam_id", exam_id).execute().data
-    submissions = supabase.table("Submission").select("*").eq("exam_id", exam_id).execute().data
+    exam = supabase.table("Exam") \
+        .select("*") \
+        .eq("exam_id", exam_id) \
+        .execute().data
 
-    return render_template("submissions.html", exam=exam, submissions=submissions)
+    submissions = supabase.table("Submission") \
+        .select("*") \
+        .eq("exam_id", exam_id) \
+        .execute().data
+
+    exam = exam[0] if exam else None
+
+    return render_template(
+        "submissions.html",
+        exam=exam,
+        submissions=submissions
+    )
 
 
 # ======================
@@ -417,7 +431,6 @@ logo_path = os.path.join(BASE_DIR, "static", "logo.png")
 if os.path.exists(logo_path):
     try:
         logo = Image(logo_path, width=90, height=90)
-        elements.append(logo)
     except Exception as e:
         print("Logo load error:", e)
 else:
