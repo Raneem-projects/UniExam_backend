@@ -281,7 +281,8 @@ def export_pdf(submission_id):
     exam = supabase.table("Exam").select("*").eq("exam_id", submission["exam_id"]).execute().data
     exam = exam[0] if exam else None
 
-    buffer = io.BytesIO()doc = SimpleDocTemplate(buffer)
+    buffer = io.BytesIO()
+    doc = SimpleDocTemplate(buffer)
     styles = getSampleStyleSheet()
 
     elements = []
