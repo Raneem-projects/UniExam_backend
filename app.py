@@ -379,7 +379,7 @@ def student_submit_exam():
 
     session = session[0]
 
-    submission_id = "SUB-" + uuid.uuid4().hex[:6].upper()
+    submission_id = f"SUB-{uuid.uuid4()}"
 
     mcq_score = 0
     
