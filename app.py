@@ -288,6 +288,21 @@ def student_submit_exam():
                 marks = q["marks"]
                 mcq_score += marks
 
+        student = supabase.table("Student") \
+            .select("*") \
+                .eq("student_id", student_id) \
+                    .execute().data
+        
+        if not student:
+            return jsonify({
+                "error": "Student not found in DB",
+                "student_id_received": student_id
+                }), 400
+            
+            student = student[0]
+            
+            student_id = student["student_id"]
+
         supabase.table("Answer").insert({
             "submission_id": submission_id,
             "exam_id": exam_id,
