@@ -49,7 +49,7 @@ def login_page():
 
 @app.route("/dashboard")
 def dashboard():
-    exams = supabase.table("exams").select("*").execute().data
+    exams = supabase.table("Exam").select("*").execute().data
     return render_template("dashboard.html", exams=exams)
 
 
@@ -68,8 +68,8 @@ def create_exam_page():
 def submissions_page():
     exam_id = request.args.get("exam_id")
 
-    exam = supabase.table("exams").select("*").eq("exam_id", exam_id).execute().data
-    submissions = supabase.table("submissions").select("*").eq("exam_id", exam_id).execute().data
+    exam = supabase.table("Exam").select("*").eq("exam_id", exam_id).execute().data
+    submissions = supabase.table("Submission").select("*").eq("exam_id", exam_id).execute().data
 
     return render_template("submissions.html", exam=exam, submissions=submissions)
 
@@ -80,12 +80,12 @@ def submissions_page():
 @app.route("/api/doctor/exams")
 def get_exams():
 
-    exams = supabase.table("exams").select("*").execute().data
+    exams = supabase.table("Exam").select("*").execute().data
     result = []
 
     for e in exams:
 
-        subs = supabase.table("submissions").select("*").eq("exam_id", e["exam_id"]).execute().data
+        subs = supabase.table("Submission").select("*").eq("exam_id", e["exam_id"]).execute().data
 
         total_students = len(subs)
         graded = len([s for s in subs if s.get("grading_status") == "completed"])
@@ -113,7 +113,7 @@ def create_session():
     data = request.get_json()
     exam_id = data.get("exam_id")
 
-    exam = supabase.table("exams").select("*").eq("exam_id", exam_id).execute().data
+    exam = supabase.table("Exam").select("*").eq("exam_id", exam_id).execute().data
     if not exam:
         return jsonify({"error": "Exam not found"}), 404
 
@@ -121,7 +121,7 @@ def create_session():
 
     pin = "".join(random.choices("0123456789", k=6))
 
-    supabase.table("sessions").insert({
+    supabase.table("Session").insert({
         "exam_id": exam_id,
         "session_pin": pin,
         "title": exam["title"],
@@ -138,7 +138,7 @@ def create_session():
 
 @app.route("/session/<exam_id>")
 def session_page(exam_id):
-    exam = supabase.table("exams").select("*").eq("exam_id", exam_id).execute().data
+    exam = supabase.table("Exam").select("*").eq("exam_id", exam_id).execute().data
     return render_template("create_session.html", exam=exam)
 
 
@@ -148,7 +148,7 @@ def session_page(exam_id):
 @app.route("/api/doctor/exam/<exam_id>/submissions")
 def get_submissions(exam_id):
 
-    subs = supabase.table("submissions").select("*").eq("exam_id", exam_id).execute().data
+    subs = supabase.table("Submission").select("*").eq("exam_id", exam_id).execute().data
 
     data = []
     for s in subs:
@@ -199,7 +199,7 @@ def verify_pin():
     student_name = data.get("student_name", "")
     device_id = data.get("device_id", "")
 
-    session = supabase.table("sessions").select("*").eq("session_pin", pin).eq("is_active", True).execute().data
+    session = supabase.table("Session").select("*").eq("session_pin", pin).eq("is_active", True).execute().data
 
     if not session:
         return jsonify({"status": "error", "message": "Invalid PIN"}), 404
@@ -208,14 +208,14 @@ def verify_pin():
 
     student_id = f"STU-{uuid.uuid4().hex[:6].upper()}"
 
-    supabase.table("students").insert({
+    supabase.table("Student").insert({
         "student_id": student_id,
         "student_name": student_name,
         "exam_id": session["exam_id"],
         "device_id": device_id
     }).execute()
 
-    exam = supabase.table("exams").select("*").eq("exam_id", session["exam_id"]).execute().data[0]
+    exam = supabase.table("Exam").select("*").eq("exam_id", session["exam_id"]).execute().data[0]
 
     return jsonify({
         "status": "success",
@@ -232,14 +232,14 @@ def verify_pin():
 @app.route("/api/student/get_exam/<exam_id>")
 def student_get_exam(exam_id):
 
-    session = supabase.table("sessions").select("*").eq("exam_id", exam_id).eq("is_active", True).execute().data
+    session = supabase.table("Session").select("*").eq("exam_id", exam_id).eq("is_active", True).execute().data
     if not session:
         return jsonify({"error": "No active session"}), 404
 
     session = session[0]
 
-    exam = supabase.table("exams").select("*").eq("exam_id", exam_id).execute().data[0]
-    questions = supabase.table("questions").select("*").eq("exam_id", exam_id).execute().data
+    exam = supabase.table("Exam").select("*").eq("exam_id", exam_id).execute().data[0]
+    questions = supabase.table("Question").select("*").eq("exam_id", exam_id).execute().data
 
     return jsonify({
         "exam_id": exam["exam_id"],
@@ -264,7 +264,7 @@ def student_submit_exam():
     exam_id = data.get("exam_id")
     answers = data.get("answers", [])
 
-    session = supabase.table("sessions").select("*").eq("session_pin", session_pin).eq("is_active", True).execute().data
+    session = supabase.table("Session").select("*").eq("session_pin", session_pin).eq("is_active", True).execute().data
     if not session:
         return jsonify({"error": "Invalid session"}), 404
 
@@ -276,7 +276,7 @@ def student_submit_exam():
 
     for ans in answers:
 
-        q = supabase.table("questions").select("*").eq("question_id", ans["question_id"]).eq("exam_id", exam_id).execute().data
+        q = supabase.table("Question").select("*").eq("question_id", ans["question_id"]).eq("exam_id", exam_id).execute().data
         if not q:
             continue
 
@@ -288,7 +288,7 @@ def student_submit_exam():
                 marks = q["marks"]
                 mcq_score += marks
 
-        supabase.table("answers").insert({
+        supabase.table("Answer").insert({
             "submission_id": submission_id,
             "exam_id": exam_id,
             "student_id": student_id,
@@ -298,7 +298,7 @@ def student_submit_exam():
             "marks_obtained": marks
         }).execute()
 
-    supabase.table("submissions").insert({
+    supabase.table("Submission").insert({
         "submission_id": submission_id,
         "exam_id": exam_id,
         "session_id": session["session_id"],
@@ -323,7 +323,7 @@ def student_submit_exam():
 @app.route("/api/student/result/<submission_id>")
 def student_result(submission_id):
 
-    sub = supabase.table("submissions").select("*").eq("submission_id", submission_id).execute().data
+    sub = supabase.table("Submission").select("*").eq("submission_id", submission_id).execute().data
 
     if not sub:
         return jsonify({"error": "Not found"}), 404
@@ -341,11 +341,11 @@ def student_result(submission_id):
 def delete_exam(exam_id):
 
     try:
-        supabase.table("answers").delete().eq("exam_id", exam_id).execute()
-        supabase.table("submissions").delete().eq("exam_id", exam_id).execute()
-        supabase.table("sessions").delete().eq("exam_id", exam_id).execute()
-        supabase.table("questions").delete().eq("exam_id", exam_id).execute()
-        supabase.table("exams").delete().eq("exam_id", exam_id).execute()
+        supabase.table("Answer").delete().eq("exam_id", exam_id).execute()
+        supabase.table("Submission").delete().eq("exam_id", exam_id).execute()
+        supabase.table("Session").delete().eq("exam_id", exam_id).execute()
+        supabase.table("Question").delete().eq("exam_id", exam_id).execute()
+        supabase.table("Exam").delete().eq("exam_id", exam_id).execute()
 
         return jsonify({"status": "deleted"})
 
@@ -357,8 +357,8 @@ def delete_exam(exam_id):
 def delete_submission(submission_id):
 
     try:
-        supabase.table("answers").delete().eq("submission_id", submission_id).execute()
-        supabase.table("submissions").delete().eq("submission_id", submission_id).execute()
+        supabase.table("Snswer").delete().eq("submission_id", submission_id).execute()
+        supabase.table("Submission").delete().eq("submission_id", submission_id).execute()
 
         return jsonify({"status": "deleted"})
 
