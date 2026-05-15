@@ -14,6 +14,7 @@ from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Image, Tabl
 from reportlab.lib import colors
 from reportlab.lib.styles import getSampleStyleSheet
 
+from models import Answer
 from parser import exam_json_to_db, parse_exam_pdf_to_json
 
 
@@ -187,35 +188,112 @@ def upload_pdf():
     })
 
 
+
+# =========================  
+# Student result Download PDF
+# =========================  
 @app.route("/api/doctor/export_pdf/<submission_id>")
 def export_pdf(submission_id):
 
-    sub = supabase.table("Submission")\
-        .select("*")\
-        .eq("submission_id", submission_id)\
+    submission = supabase.table("Submission") \
+        .select("*") \
+        .eq("submission_id", submission_id) \
         .execute().data
 
-    if not sub:
-        return jsonify({"error": "Not found"}), 404
+    if not submission:
+        return "Not found", 404
 
-    sub = sub[0]
+    submission = submission[0]
+
+    answers = supabase.table("Answer") \
+        .select("*") \
+        .eq("submission_id", submission_id) \
+        .execute().data
+
+    exam = supabase.table("Exam") \
+        .select("*") \
+        .eq("exam_id", submission["exam_id"]) \
+        .execute().data
+
+    exam = exam[0] if exam else None
 
     buffer = io.BytesIO()
+
     doc = SimpleDocTemplate(buffer)
-
     styles = getSampleStyleSheet()
-    content = []
 
-    content.append(Paragraph(f"Student ID: {sub.get('student_id')}", styles["Normal"]))
-    content.append(Paragraph(f"Score: {sub.get('total_grade')}", styles["Normal"]))
-    content.append(Paragraph(f"Status: {sub.get('grading_status')}", styles["Normal"]))
+    elements = []
 
-    doc.build(content)
+    try:
+        logo = Image("static/logo.png", width=80, height=80)
+        elements.append(logo)
+    except Exception:
+        pass  
+
+    elements.append(Spacer(1, 10))
+    elements.append(Paragraph("UniExam - Student Report", styles["Title"]))
+    elements.append(Spacer(1, 10))
+
+    if exam:
+        elements.append(Paragraph(f"Exam: {exam['title']}", styles["Normal"]))
+    else:
+        elements.append(Paragraph(f"Exam ID: {submission['exam_id']}", styles["Normal"]))
+
+    elements.append(Spacer(1, 10))
+
+    elements.append(Paragraph(f"Student ID: {submission['student_id']}", styles["Normal"]))
+
+    section_val = str(submission.get("student_name", "")).replace(
+        "ID:" + str(submission["student_id"]) + " | Sec:", ""
+    ).replace("Sec:", "").strip()
+
+    elements.append(Paragraph(f"Section: {section_val}", styles["Normal"]))
+
+    elements.append(Spacer(1, 10))
+    elements.append(Paragraph(f"Total Grade: {submission['total_grade']}", styles["Normal"]))
+
+    elements.append(Spacer(1, 15))
+
+    table_data = [["Question", "Answer", "Marks"]]
+
+    for a in answers:
+        answer_text = a.get("answer_text") if a.get("answer_text") else (a.get("selected_option") or "-")
+        marks = a.get("marks_obtained") if a.get("marks_obtained") is not None else 0
+
+        table_data.append([
+            str(a.get("question_id")),
+            answer_text,
+            str(marks)
+        ])
+
+    table = Table(table_data)
+
+    table.setStyle(TableStyle([
+        ("BACKGROUND", (0, 0), (-1, 0), colors.grey),
+        ("TEXTCOLOR", (0, 0), (-1, 0), colors.white),
+        ("ALIGN", (0, 0), (-1, -1), "CENTER"),
+        ("GRID", (0, 0), (-1, -1), 1, colors.black),
+        ("FONTNAME", (0, 0), (-1, 0), "Helvetica-Bold"),
+    ]))
+
+    elements.append(table)
+
+    doc.build(elements)
+
     buffer.seek(0)
 
-    return send_file(buffer, as_attachment=True,
-                     download_name=f"{submission_id}.pdf",
-                     mimetype="application/pdf")
+    return send_file(
+        buffer,
+        as_attachment=True,
+        download_name=f"{submission['student_name']}_report.pdf",
+        mimetype="application/pdf"
+    )
+
+
+ 
+# ======================  
+# Student APIs (ESP32)  
+# ======================
 
 
 # ======================
