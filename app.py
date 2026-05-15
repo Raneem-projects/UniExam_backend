@@ -415,6 +415,8 @@ def export_pdf(submission_id):
     submission = supabase.table("Submission").select("*").eq("submission_id", submission_id).execute().data
     if not submission:
         return "Not found", 404
+    
+    logo = Image ("static/logo.png",width=80, height=80)
 
     submission = submission[0]
 
