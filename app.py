@@ -165,7 +165,7 @@ def get_submissions(exam_id):
     data = []
     for s in subs:
         data.append({
-            "student_name": s.get("student_name"),
+            "section": s.get("section"),
             "student_id": s.get("student_id"),
             "mcq_score": s.get("mcq_score"),
             "total_score": s.get("total_grade"),
@@ -496,7 +496,6 @@ def export_pdf(submission_id):
         elements.append(Paragraph(f"Exam ID: {submission['exam_id']}", styles["Normal"]))
 
     elements.append(Paragraph(f"Student ID: {submission['student_id']}", styles["Normal"]))
-    elements.append(Paragraph(f"Student Name: {submission['student_name']}", styles["Normal"]))
 
     elements.append(Spacer(1, 10))
     elements.append(Paragraph(f"Total Grade: {submission['total_grade']}", styles["Normal"]))
@@ -536,7 +535,7 @@ def export_pdf(submission_id):
     return send_file(
         buffer,
         as_attachment=True,
-        download_name=f"{submission['student_name']}_report.pdf",
+        download_name=f"{submission['student_id']}_report.pdf",
         mimetype="application/pdf"
     )
     
