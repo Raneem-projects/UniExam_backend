@@ -406,23 +406,50 @@ def delete_submission(submission_id):
     return jsonify({"status": "deleted"})
 
 
+# =========================
+# LOGO (FIXED FOR RENDER)
+# =========================
+import os
+
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+logo_path = os.path.join(BASE_DIR, "static", "logo.png")
+
+if os.path.exists(logo_path):
+    try:
+        logo = Image(logo_path, width=90, height=90)
+        elements.append(logo)
+    except Exception as e:
+        print("Logo load error:", e)
+else:
+    print("Logo NOT FOUND at:", logo_path)
+
+
 # ======================
 # PDF Export
 # ======================
 @app.route("/api/doctor/export_pdf/<submission_id>")
 def export_pdf(submission_id):
 
-    submission = supabase.table("Submission").select("*").eq("submission_id", submission_id).execute().data
+    submission = supabase.table("Submission") \
+        .select("*") \
+        .eq("submission_id", submission_id) \
+        .execute().data
+
     if not submission:
         return "Not found", 404
-    
-    logo = Image ("static/logo.png",width=80, height=80)
 
     submission = submission[0]
 
-    answers = supabase.table("Answer").select("*").eq("submission_id", submission_id).execute().data or []
+    answers = supabase.table("Answer") \
+        .select("*") \
+        .eq("submission_id", submission_id) \
+        .execute().data
 
-    exam = supabase.table("Exam").select("*").eq("exam_id", submission["exam_id"]).execute().data
+    exam = supabase.table("Exam") \
+        .select("*") \
+        .eq("exam_id", submission["exam_id"]) \
+        .execute().data
+
     exam = exam[0] if exam else None
 
     buffer = io.BytesIO()
@@ -431,37 +458,75 @@ def export_pdf(submission_id):
 
     elements = []
 
-    elements.append(Paragraph("UniExam Report", styles["Title"]))
+    
+    BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+    logo_path = os.path.join(BASE_DIR, "static", "logo.png")
+
+    if os.path.exists(logo_path):
+        try:
+            logo = Image(logo_path, width=90, height=90)
+            elements.append(logo)
+        except Exception as e:
+            print("Logo error:", e)
+
     elements.append(Spacer(1, 10))
 
+    
+    elements.append(Paragraph("UniExam System", styles["Heading2"]))
+    elements.append(Paragraph("Student Report", styles["Title"]))
+    elements.append(Spacer(1, 15))
+
+   
     if exam:
-        elements.append(Paragraph(exam["title"], styles["Normal"]))
+        elements.append(Paragraph(f"Exam: {exam['title']}", styles["Normal"]))
+    else:
+        elements.append(Paragraph(f"Exam ID: {submission['exam_id']}", styles["Normal"]))
 
     elements.append(Paragraph(f"Student ID: {submission['student_id']}", styles["Normal"]))
-    elements.append(Paragraph(f"Score: {submission['total_grade']}", styles["Normal"]))
+    elements.append(Paragraph(f"Student Name: {submission['student_name']}", styles["Normal"]))
 
+    elements.append(Spacer(1, 10))
+    elements.append(Paragraph(f"Total Grade: {submission['total_grade']}", styles["Normal"]))
+    elements.append(Spacer(1, 15))
+
+    # =========================
+    # TABLE
+    # =========================
     table_data = [["Question", "Answer", "Marks"]]
 
     for a in answers:
+        answer_text = a.get("answer_text") or a.get("selected_option") or "-"
+        marks = a.get("marks_obtained") if a.get("marks_obtained") is not None else 0
+
         table_data.append([
             str(a.get("question_id")),
-            a.get("answer_text") or a.get("selected_option") or "-",
-            str(a.get("marks_obtained") or 0)
+            answer_text,
+            str(marks)
         ])
 
     table = Table(table_data)
+
     table.setStyle(TableStyle([
         ("BACKGROUND", (0, 0), (-1, 0), colors.grey),
         ("TEXTCOLOR", (0, 0), (-1, 0), colors.white),
+        ("ALIGN", (0, 0), (-1, -1), "CENTER"),
         ("GRID", (0, 0), (-1, -1), 1, colors.black),
+        ("FONTNAME", (0, 0), (-1, 0), "Helvetica-Bold"),
     ]))
 
     elements.append(table)
 
     doc.build(elements)
+
     buffer.seek(0)
 
-    return send_file(buffer, as_attachment=True, download_name="report.pdf", mimetype="application/pdf")
+    return send_file(
+        buffer,
+        as_attachment=True,
+        download_name=f"{submission['student_name']}_report.pdf",
+        mimetype="application/pdf"
+    )
+    
 
 
 # ======================
