@@ -198,6 +198,7 @@ def verify_pin():
     pin = data.get("session_pin")
     student_name = data.get("student_name", "")
     device_id = data.get("device_id", "")
+    student_id = data.get("student_id")
 
     session = supabase.table("Session").select("*").eq("session_pin", pin).eq("is_active", True).execute().data
 
@@ -206,23 +207,20 @@ def verify_pin():
 
     session = session[0]
 
-    student_id = data.get("student_id")
-    student_name = data.get("student_name", "")
-    device_id = data.get("device_id", "")
-
+    # check existing student
     existing = supabase.table("Student") \
         .select("*") \
-            .eq("student_id", student_id) \
-                    .execute().data
-    
+        .eq("student_id", student_id) \
+        .eq("exam_id", session["exam_id"]) \
+        .execute().data
+
     if not existing:
         supabase.table("Student").insert({
             "student_id": student_id,
             "student_name": student_name,
             "exam_id": session["exam_id"],
             "device_id": device_id
-            }).execute()
-
+        }).execute()
 
     exam = supabase.table("Exam").select("*").eq("exam_id", session["exam_id"]).execute().data[0]
 
@@ -297,16 +295,6 @@ def student_submit_exam():
                 marks = q["marks"]
                 mcq_score += marks
 
-        student = supabase.table("Student") \
-            .select("*") \
-                .eq("student_id", student_id) \
-                        .execute().data
-        if not student:
-            return jsonify({"error": "Student not registered"}), 400
-            
-            
-            student_id = student["student_id"]
-
         supabase.table("Answer").insert({
             "submission_id": submission_id,
             "exam_id": exam_id,
@@ -356,6 +344,9 @@ def student_result(submission_id):
     })
 
 
+# ======================
+# Delete Exam
+# ======================
 @app.route("/api/doctor/delete_exam/<exam_id>", methods=["DELETE"])
 def delete_exam(exam_id):
 
@@ -370,13 +361,16 @@ def delete_exam(exam_id):
 
     except Exception as e:
         return jsonify({"error": str(e)}), 500
-    
 
+
+# ======================
+# Delete Submission
+# ======================
 @app.route("/api/doctor/delete_submission/<submission_id>", methods=["DELETE"])
 def delete_submission(submission_id):
 
     try:
-        supabase.table("Snswer").delete().eq("submission_id", submission_id).execute()
+        supabase.table("Answer").delete().eq("submission_id", submission_id).execute()
         supabase.table("Submission").delete().eq("submission_id", submission_id).execute()
 
         return jsonify({"status": "deleted"})
