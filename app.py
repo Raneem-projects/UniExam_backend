@@ -272,6 +272,7 @@ def student_submit_exam():
         if not data:
             return jsonify({"error": "No data"}), 400
 
+        section = data.get("section")
         session_pin = data.get("session_pin")
         student_id = data.get("student_id")
         exam_id = data.get("exam_id")
@@ -310,6 +311,7 @@ def student_submit_exam():
             "session_id": session["session_id"],
             "student_id": student_id,
             "student_name": student[0]["student_name"],
+            "section": "section",
             "mcq_score": 0,
             "total_grade": 0,
             "grading_status": "completed",
