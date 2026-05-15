@@ -252,70 +252,106 @@ def student_get_exam(exam_id):
 @app.route("/api/student/submit_exam", methods=["POST"])
 def student_submit_exam():
 
-    data = request.get_json()
+    try:
+        data = request.get_json()
 
-    session_pin = data.get("session_pin")
-    student_id = data.get("student_id")
-    exam_id = data.get("exam_id")
-    answers = data.get("answers", [])
+        if not data:
+            return jsonify({"error": "No data"}), 400
 
-    session = supabase.table("Session").select("*").eq("session_pin", session_pin).eq("is_active", True).execute().data
-    if not session:
-        return jsonify({"error": "Invalid session"}), 404
+        session_pin = data.get("session_pin")
+        student_id = data.get("student_id")
+        exam_id = data.get("exam_id")
+        answers = data.get("answers", [])
 
-    session = session[0]
-
-    submission_id = f"SUB-{uuid.uuid4()}"
-
-    mcq_score = 0
-
-    supabase.table("Submission").insert({
-        "submission_id": submission_id,
-        "exam_id": exam_id,
-        "session_id": session["session_id"],
-        "student_id": student_id,
-        "student_name": "",
-        "mcq_score": 0,
-        "total_grade": 0,
-        "grading_status": "completed",
-        "submitted_at": datetime.utcnow().isoformat()
-    }).execute()
-
-    for ans in answers:
-
-        q = supabase.table("Question") \
+       
+        session = supabase.table("Session") \
             .select("*") \
-            .eq("question_id", ans["question_id"]) \
-            .eq("exam_id", exam_id) \
+            .eq("session_pin", session_pin) \
+            .eq("is_active", True) \
             .execute().data
 
-        if not q:
-            continue
+        if not session:
+            return jsonify({"error": "Invalid session"}), 404
 
-        q = q[0]
+        session = session[0]
 
-        marks = 0
+       
+        student = supabase.table("Student") \
+            .select("*") \
+            .eq("student_id", student_id) \
+            .execute().data
 
-        if q["type"] in ["mcq", "true_false"]:
-            if ans.get("selected_option", "").upper() == q.get("correct_answer", "").upper():
-                marks = q["marks"]
-                mcq_score += marks
+        if not student:
+            return jsonify({"error": "Student not found"}), 400
 
-        supabase.table("Answer").insert({
+        
+        submission_id = f"SUB-{uuid.uuid4().hex[:8]}"
+
+        mcq_score = 0
+
+        
+        supabase.table("Submission").insert({
             "submission_id": submission_id,
             "exam_id": exam_id,
+            "session_id": session["session_id"],
             "student_id": student_id,
-            "question_id": ans["question_id"],
-            "selected_option": ans.get("selected_option"),
-            "answer_text": ans.get("answer_text"),
-            "marks_obtained": marks
+            "student_name": student[0]["student_name"],
+            "mcq_score": 0,
+            "total_grade": 0,
+            "grading_status": "completed",
+            "submitted_at": datetime.utcnow().isoformat()
         }).execute()
 
+        
+        for ans in answers:
 
-        supabase.table("Submission").update({
-            "mcq_score": mcq_score,
-            "total_grade": mcq_score
-            }).eq("submission_id", submission_id).execute()
+            q = supabase.table("Question") \
+                .select("*") \
+                .eq("question_id", ans["question_id"]) \
+                .eq("exam_id", exam_id) \
+                .execute().data
+
+            if not q:
+                continue
+
+            q = q[0]
+
+            marks = 0
+
+            #MCQ AUTO GRADING
+            if q["type"] in ["mcq", "true_false"]:
+                if (ans.get("selected_option") or "").strip().upper() == \
+                   (q.get("correct_answer") or "").strip().upper():
+
+                    marks = q["marks"]
+                    mcq_score += marks
+
+            supabase.table("Answer").insert({
+                "submission_id": submission_id,
+                "exam_id": exam_id,
+                "student_id": student_id,
+                "question_id": ans["question_id"],
+                "selected_option": ans.get("selected_option"),
+                "answer_text": ans.get("answer_text"),
+                "marks_obtained": marks
+            }).execute()
+
+        supabase.table("Submission") \
+            .update({
+                "mcq_score": mcq_score,
+                "total_grade": mcq_score
+            }) \
+            .eq("submission_id", submission_id) \
+            .execute()
+
+        return jsonify({
+            "status": "success",
+            "submission_id": submission_id,
+            "mcq_score": mcq_score
+        })
+
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
 
 
 # ======================
@@ -344,9 +380,9 @@ def student_result(submission_id):
 @app.route("/api/doctor/delete_exam/<exam_id>", methods=["DELETE"])
 def delete_exam(exam_id):
     try:
-        supabase.table("Student").delete().eq("exam_id", exam_id).execute()
         supabase.table("Answer").delete().eq("exam_id", exam_id).execute()
         supabase.table("Submission").delete().eq("exam_id", exam_id).execute()
+        supabase.table("Student").delete().eq("exam_id", exam_id).execute()
         supabase.table("Session").delete().eq("exam_id", exam_id).execute()
         supabase.table("Question").delete().eq("exam_id", exam_id).execute()
         supabase.table("Exam").delete().eq("exam_id", exam_id).execute()
