@@ -30,7 +30,7 @@ os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 # ======================
 # Supabase Setup
 # ======================
-SUPABASE_URL = "https://yvwtsebueljtuimhytwp.supabase.co/rest/v1/"
+SUPABASE_URL = "https://yvwtsebueljtuimhytwp.supabase.co"
 SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inl2d3RzZWJ1ZWxqdHVpbWh5dHdwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg4MzcyMDEsImV4cCI6MjA5NDQxMzIwMX0.oIXJ2CjW00DpGcv5FfXj-j2CtcH_fopqSX5Q8O0hkMM"
 
 supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
@@ -39,11 +39,6 @@ supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
 # ======================
 # Pages
 # ======================
-@app.route("/")
-def home():
-    return "Server running"
-
-
 @app.route("/login", methods=["GET", "POST"])
 def login_page():
     if request.method == "POST":
