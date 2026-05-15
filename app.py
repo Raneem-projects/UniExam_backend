@@ -37,11 +37,6 @@ supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
 # ======================
 # Pages
 # ======================
-@app.route("/")
-def home():
-    return redirect(url_for("login_page"))
-
-
 @app.route("/login", methods=["GET", "POST"])
 def login_page():
     if request.method == "POST":
