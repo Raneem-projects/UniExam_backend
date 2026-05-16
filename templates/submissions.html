@@ -55,7 +55,7 @@
         <tr id="row-{{ sub.submission_id }}">
             <td>{{ loop.index }}</td>
             <td>{{ sub.student_id }}</td>
-            <td>{{ sub.student_name | replace("ID:" + sub.student_id + " | Sec:", "") | replace("Sec:", "") }}</td>
+            <td>{{ sub.section }}</td>
             <td>{{ sub.submitted_at[:16] if sub.submitted_at else "-" }}</td>
             <td class="grade">
                 {{ sub.total_grade if sub.total_grade is not none else "-" }}
