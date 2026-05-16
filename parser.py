@@ -51,6 +51,13 @@ def parse_exam_pdf_to_json(pdf_input):
                 next_line = lines[i].strip()
                 if next_line:
                     combined += " " + next_line
+            # If marks [x] not in combined yet, check next line
+            import re as _re
+            if not _re.search(r'\[\d+(?:\.\d+)?\]', combined) and i + 1 < len(lines):
+                next_line = lines[i + 1].strip() if i + 1 < len(lines) else ""
+                if next_line and _re.match(r'^\[\d+(?:\.\d+)?\]', next_line):
+                    i += 1
+                    combined += " " + next_line
             merged_lines.append(combined)
         else:
             merged_lines.append(line)
