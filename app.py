@@ -324,9 +324,17 @@ def student_submit_exam():
 
             #MCQ AUTO GRADING
             if q["type"] in ["mcq", "true_false"]:
-                if (ans.get("selected_option") or "").strip().upper() == \
-                   (q.get("correct_answer") or "").strip().upper():
-
+                selected = (ans.get("selected_option") or "").strip().upper()
+                correct = (q.get("correct_answer") or "").strip().upper()
+                
+                # Convert A/B to TRUE/FALSE for true_false questions
+                if q["type"] == "true_false":
+                    if correct == "A":
+                        correct = "TRUE"
+                    elif correct == "B":
+                        correct = "FALSE"
+                
+                if selected == correct:
                     marks = q["marks"]
                     mcq_score += marks
 
