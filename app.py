@@ -311,7 +311,7 @@ def student_submit_exam():
             "session_id": session["session_id"],
             "student_id": student_id,
             "student_name": student[0]["student_name"],
-            "section": "section",
+            "section": section,
             "mcq_score": 0,
             "total_grade": 0,
             "grading_status": "completed",
