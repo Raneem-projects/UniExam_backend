@@ -185,9 +185,12 @@ def upload_pdf():
         return jsonify({"error": "No file"}), 400
 
     file = request.files["pdf"]
-    pdf_bytes = file.read()
+    filename = file.filename
 
-    exam_json = parse_exam_pdf_to_json(pdf_bytes)
+    save_path = os.path.join(UPLOAD_FOLDER, filename)
+    file.save(save_path)
+
+    exam_json = parse_exam_pdf_to_json(save_path)
     exam_id = exam_json_to_db(exam_json)
 
     return jsonify({"status": "success", "exam_id": exam_id})
@@ -288,15 +291,6 @@ def student_submit_exam():
         session = session[0]
 
        
-        student = supabase.table("Student") \
-            .select("*") \
-            .eq("student_id", student_id) \
-            .execute().data
-
-        if not student:
-            return jsonify({"error": "Student not found"}), 400
-
-        
         submission_id = f"SUB-{uuid.uuid4().hex[:8]}"
 
         mcq_score = 0
@@ -307,7 +301,7 @@ def student_submit_exam():
             "exam_id": exam_id,
             "session_id": session["session_id"],
             "student_id": student_id,
-            "student_name": student[0]["student_name"],
+            "student_name": student_id + " | Sec:" + str(section),
             "section": section,
             "mcq_score": 0,
             "total_grade": 0,
