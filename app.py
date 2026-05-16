@@ -499,6 +499,7 @@ def export_pdf(submission_id):
         elements.append(Paragraph(f"Exam ID: {submission['exam_id']}", styles["Normal"]))
 
     elements.append(Paragraph(f"Student ID: {submission['student_id']}", styles["Normal"]))
+    elements.append(Paragraph(f"Section: {submission['section']}", styles["Normal"]))
 
     elements.append(Spacer(1, 10))
     elements.append(Paragraph(f"Total Grade: {submission['total_grade']}", styles["Normal"]))
