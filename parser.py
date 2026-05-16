@@ -14,6 +14,12 @@ SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJ
 supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
 
 
+def to_number(val):
+    """Convert to int if whole number, else float"""
+    f = float(val)
+    return int(f) if f == int(f) else f
+
+
 # ===============================
 # PDF to JSON
 # ===============================
@@ -23,6 +29,7 @@ def parse_exam_pdf_to_json(pdf_input):
         doc = fitz.open(stream=pdf_input, filetype="pdf")
     else:
         doc = fitz.open(pdf_input)
+
     text = ""
     for page in doc:
         text += page.get_text() + "\n"
@@ -44,7 +51,6 @@ def parse_exam_pdf_to_json(pdf_input):
                 next_line = lines[i].strip()
                 if next_line:
                     combined += " " + next_line
-
             merged_lines.append(combined)
         else:
             merged_lines.append(line)
@@ -77,7 +83,7 @@ def parse_exam_pdf_to_json(pdf_input):
 
         elif line.startswith("Duration"):
             try:
-                exam["duration_minutes"] = int(line.split(":", 1)[-1].strip())
+                exam["duration_minutes"] = int(float(line.split(":", 1)[-1].strip()))
             except:
                 pass
 
@@ -92,11 +98,10 @@ def parse_exam_pdf_to_json(pdf_input):
             marks = 1
             marks_match = re.search(r'\[(\d+(?:\.\d+)?)\]', line)
             if marks_match:
-                marks = float(marks_match.group(1))
-                if marks == int(marks):
-                    marks = int(marks)
+                marks = to_number(marks_match.group(1))
 
             clean_text = re.sub(r'\(mcq\)|\(true_false\)', '', line).strip()
+            clean_text = re.sub(r'\[\d+(?:\.\d+)?\]', '', clean_text).strip()
 
             current_q = {
                 "question_id": qid,
@@ -118,15 +123,14 @@ def parse_exam_pdf_to_json(pdf_input):
         exam["questions"].append(current_q)
 
     mcq_qs = [q for q in exam["questions"] if q["type"] == "mcq"]
-    tf_qs = [q for q in exam["questions"] if q["type"] == "true_false"]
-
+    tf_qs  = [q for q in exam["questions"] if q["type"] == "true_false"]
     sorted_qs = mcq_qs + tf_qs
 
     for i, q in enumerate(sorted_qs):
         q["question_id"] = i + 1
 
     exam["questions"] = sorted_qs
-    exam["total_marks"] = sum(q["marks"] for q in sorted_qs)
+    exam["total_marks"] = to_number(sum(q["marks"] for q in sorted_qs))
 
     return exam
 
@@ -136,7 +140,6 @@ def parse_exam_pdf_to_json(pdf_input):
 # ===============================
 def exam_json_to_db(data):
 
-    # check if exists
     existing = supabase.table("Exam") \
         .select("*") \
         .eq("exam_id", data["exam_id"]) \
@@ -145,27 +148,26 @@ def exam_json_to_db(data):
     if existing:
         return existing[0]["exam_id"]
 
-    # insert exam
     supabase.table("Exam").insert({
-        "exam_id": data["exam_id"],
-        "title": data["title"],"course_code": data["course_code"],
-        "instructor": data["instructor"],
-        "duration_minutes": data["duration_minutes"],
-        "total_marks": data["total_marks"],
-        "created_at": data["created_at"]
+        "exam_id":          data["exam_id"],
+        "title":            data["title"],
+        "course_code":      data["course_code"],
+        "instructor":       data["instructor"],
+        "duration_minutes": int(data["duration_minutes"]),
+        "total_marks":      data["total_marks"],
+        "created_at":       data["created_at"]
     }).execute()
 
-    # insert questions
     for q in data["questions"]:
         supabase.table("Question").insert({
-            "exam_id": data["exam_id"],
-            "question_id": q["question_id"],
-            "type": q["type"],
-            "text": q["text"],
-            "marks": q["marks"],
-            "options": q.get("options"),
+            "exam_id":        data["exam_id"],
+            "question_id":    int(q["question_id"]),
+            "type":           q["type"],
+            "text":           q["text"],
+            "marks":          q["marks"],
+            "options":        q.get("options"),
             "correct_answer": q.get("correct_answer"),
-            "page_number": q.get("page_number")
+            "page_number":    int(q.get("page_number", 1))
         }).execute()
 
     return data["exam_id"]
