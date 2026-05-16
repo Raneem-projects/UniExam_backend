@@ -185,12 +185,9 @@ def upload_pdf():
         return jsonify({"error": "No file"}), 400
 
     file = request.files["pdf"]
-    filename = file.filename
+    pdf_bytes = file.read()
 
-    save_path = os.path.join(UPLOAD_FOLDER, filename)
-    file.save(save_path)
-
-    exam_json = parse_exam_pdf_to_json(save_path)
+    exam_json = parse_exam_pdf_to_json(pdf_bytes)
     exam_id = exam_json_to_db(exam_json)
 
     return jsonify({"status": "success", "exam_id": exam_id})
