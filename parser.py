@@ -17,9 +17,12 @@ supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
 # ===============================
 # PDF to JSON
 # ===============================
-def parse_exam_pdf_to_json(pdf_path):
+def parse_exam_pdf_to_json(pdf_input):
 
-    doc = fitz.open(pdf_path)
+    if isinstance(pdf_input, bytes):
+        doc = fitz.open(stream=pdf_input, filetype="pdf")
+    else:
+        doc = fitz.open(pdf_input)
     text = ""
     for page in doc:
         text += page.get_text() + "\n"
