@@ -69,7 +69,7 @@
                 {% endif %}
             </td>
             <td>
-                <button class="btn btn-pdf" onclick="window.open('/api/doctor/export_pdf/{{ sub.submission_id }}','_blank')">PDF</button>
+                <a href="/api/doctor/export_pdf/{{ sub.submission_id }}" target="_blank"><button class="btn btn-pdf">PDF</button></a>
                 <button class="btn btn-del" onclick="deleteSubmission('{{ sub.submission_id }}')">Delete</button>
             </td>
         </tr>
