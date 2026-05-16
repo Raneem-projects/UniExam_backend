@@ -385,6 +385,7 @@ def student_result(submission_id):
 
     return jsonify({
         "student_name": sub.get("student_name"),
+        "section": sub.get("section"), 
         "total_grade": sub.get("total_grade"),
         "status": sub.get("grading_status")
     })
