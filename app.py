@@ -311,7 +311,7 @@ def student_submit_exam():
 
             q = supabase.table("Question") \
                 .select("*") \
-                .eq("question_id", ans["question_id"]) \
+                .eq("question_id", int(ans["question_id"])) \
                 .eq("exam_id", exam_id) \
                 .execute().data
 
